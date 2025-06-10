@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-3">
+    <h2>Log File Analyzer</h2>
+</div>
+
+<!-- Upload Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="file" class="form-label">Upload Log File:</label>
+                <input type="file" class="form-control" id="file" name="file" accept=".log,.txt" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Analyze</button>
+        </form>
+    </div>
+</div>
+
+{% if logs %}
+<!-- Results -->
+<div class="card">
+    <div class="card-header">
+        <h4>Analysis Results - {{ filename }}</h4>
+    </div>
+    <div class="card-body">
+        {% if level_counts %}
+        <h5>Log Level Distribution:</h5>
+        <ul class="list-inline">
+            {% for level, count in level_counts.items() %}
+            <li class="list-inline-item">
+                <span class="badge bg-{{ 'danger' if level == 'ERROR' else 'warning' if level == 'WARNING' else 'info' if level == 'INFO' else 'secondary' }}">
+                    {{ level }}: {{ count }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        <hr>
+        {% endif %}
+        
+        <h5>Recent Log Entries:</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Level</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="log-level-{{ log.level }}">
+                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if log.level == 'ERROR' else 'warning' if log.level == 'WARNING' else 'info' if log.level == 'INFO' else 'secondary' }}">
+                                {{ log.level }}
+                            </span>
+                        </td>
+                        <td>{{ log.message }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

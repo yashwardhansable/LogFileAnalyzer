@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <!-- ────────── Sidebar ────────── -->
+    <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+      <div class="position-sticky pt-3">
+        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+          <span>Analyzed Log Files</span>
+          <span class="badge bg-primary rounded-pill">{{ analyzed_files|length }}</span>
+        </h6>
+        <ul class="nav flex-column">
+          {% for file in analyzed_files %}
+          <li class="nav-item">
+            <a href="{{ url_for('view_analytics', source_file=file.source_file) }}"
+               class="nav-link {% if current_file == file.source_file %}active{% else %}text-dark{% endif %}">
+              <i class="bi bi-file-earmark-text me-2"></i> {{ file.source_file }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────── Main content ────────── -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h2>
+          {% if current_file %} Analytics for {{ current_file }} {% else %} Log Analytics Dashboard {% endif %}
+        </h2>
+      </div>
+
+      <!-- ────────── Bar Chart ────────── -->
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Log-Level Distribution</h5></div>
+        <div class="card-body">
+          {{ plot_bar|safe }}
+        </div>
+      </div>
+
+      <!-- ────────── Line Chart ────────── -->
+      <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Entries per Minute</h5></div>
+        <div class="card-body">
+          {{ plot_line|safe }}
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}

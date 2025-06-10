@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Analyzed Log Files</span>
+                    <span class="badge bg-primary rounded-pill">{{ analyzed_files|length }}</span>
+                </h6>
+                <ul class="nav flex-column">
+                    {% for file in analyzed_files %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('view_logs', source_file=file.source_file) }}" 
+                           class="nav-link {% if current_file == file.source_file %}active{% else %}text-dark{% endif %}">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            {{ file.source_file }}
+                            <span class="badge bg-secondary rounded-pill float-end">{{ file.entry_count }}</span>
+                        </a>
+                        <small class="text-muted ps-4 d-block">
+                            Last: {{ file.last_analyzed.strftime('%b %d, %H:%M') }}
+                        </small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h2>
+                    {% if current_file %}
+                        Logs for {{ current_file }}
+                    {% else %}
+                        All Log Entries
+                    {% endif %}
+                </h2>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="bi bi-upload"></i> Upload New Log
+                </a>
+            </div>
+
+            <!-- Log Level Summary -->
+            {% if level_stats %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Log Level Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for level, count in level_stats.items() %}
+                                <div class="d-flex align-items-center me-4">
+                                    <span class="badge bg-{{ 'danger' if level == 'ERROR' else 'warning' if level == 'WARNING' else 'info' if level == 'INFO' else 'secondary' }} me-2">
+                                        {{ level }}
+                                    </span>
+                                    <span class="text-muted">{{ count }} entries</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Log Entries -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Level</th>
+                                    <th>Message</th>
+                                    <th>Source File</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs.items %}
+                                <tr class="log-level-{{ log.level }}">
+                                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if log.level == 'ERROR' else 'warning' if log.level == 'WARNING' else 'info' if log.level == 'INFO' else 'secondary' }}">
+                                            {{ log.level }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log.message[:150] }}{% if log.message|length > 150 %}...{% endif %}</td>
+                                    <td>
+                                        <a href="{{ url_for('view_logs', source_file=log.source_file) }}" class="text-decoration-none">
+                                            {{ log.source_file }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav aria-label="Log pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if logs.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="{{ url_for('view_logs', page=logs.prev_num, source_file=current_file) }}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in logs.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                {% if page_num %}
+                                    <li class="page-item {% if page_num == logs.page %}active{% endif %}">
+                                        <a class="page-link" 
+                                           href="{{ url_for('view_logs', page=page_num, source_file=current_file) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if logs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="{{ url_for('view_logs', page=logs.next_num, source_file=current_file) }}">
+                                    Next
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<style>
+    .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    }
+    .nav-link {
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .nav-link:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    .nav-link.active {
+        background-color: #0d6efd;
+        color: white !important;
+    }
+</style>
+{% endblock %}
